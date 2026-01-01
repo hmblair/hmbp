@@ -16,8 +16,10 @@ from hmbp.plotting import (
     CMAP_ALT,
     # Core plot functions
     line_plot,
+    multi_line_plot,
     scatter_plot,
     histogram,
+    histogram_overlay,
     bar_plot,
     heatmap,
     box_plot,
@@ -37,8 +39,10 @@ from hmbp.plotting import (
     new_figure,
     # Quick API
     quick_line,
+    quick_lines,
     quick_scatter,
     quick_histogram,
+    quick_histogram_overlay,
     quick_bar,
     quick_heatmap,
     quick_confusion_matrix,
@@ -61,8 +65,10 @@ __all__ = [
     "CMAP_ALT",
     # Core plot functions
     "line_plot",
+    "multi_line_plot",
     "scatter_plot",
     "histogram",
+    "histogram_overlay",
     "bar_plot",
     "heatmap",
     "box_plot",
@@ -82,8 +88,10 @@ __all__ = [
     "new_figure",
     # Quick API
     "quick_line",
+    "quick_lines",
     "quick_scatter",
     "quick_histogram",
+    "quick_histogram_overlay",
     "quick_bar",
     "quick_heatmap",
     "quick_confusion_matrix",

@@ -21,11 +21,17 @@ import hmbp
 # Line plots (training curves, time series)
 hmbp.quick_line(y, x, title="Loss Curve", xlabel="Epoch", ylabel="Loss", path="figures/loss.png")
 
+# Multi-line plots (comparing multiple series)
+hmbp.quick_lines([y1, y2, y3], x, labels=["A", "B", "C"], title="Comparison", path="figures/lines.png")
+
 # Scatter plots (correlations, embeddings)
 hmbp.quick_scatter(x, y, title="Feature Correlation", xlabel="X", ylabel="Y", path="figures/scatter.png")
 
 # Histograms (distributions)
 hmbp.quick_histogram(data, title="Score Distribution", xlabel="Score", path="figures/hist.png")
+
+# Overlay histograms (comparing distributions)
+hmbp.quick_histogram_overlay([data1, data2], labels=["Before", "After"], title="Distribution Comparison", path="figures/hist_overlay.png")
 
 # Bar plots (comparisons)
 hmbp.quick_bar(values, labels, title="Model Comparison", ylabel="Accuracy", path="figures/bars.png")

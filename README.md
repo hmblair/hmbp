@@ -31,8 +31,10 @@ hmbp.save("output.png")
 | Function | Description |
 |----------|-------------|
 | `line_plot` | Line with optional fill |
+| `multi_line_plot` | Multiple lines on same axes |
 | `scatter_plot` | Scatter with optional color mapping |
 | `histogram` | Color-mapped histogram |
+| `histogram_overlay` | Overlaid histograms for comparison |
 | `bar_plot` | Vertical/horizontal bars |
 | `box_plot` | Box plot distributions |
 | `violin_plot` | Violin plot distributions |
@@ -64,4 +66,4 @@ hmbp.quick_bar(values, labels, title="Comparison", ylabel="F1", path="bars.png")
 hmbp.quick_confusion_matrix(cm, class_names=["A", "B"], path="cm.png")
 ```
 
-Available: `quick_line`, `quick_scatter`, `quick_histogram`, `quick_bar`, `quick_heatmap`, `quick_confusion_matrix`, `quick_roc`, `quick_volcano`
+Available: `quick_line`, `quick_lines`, `quick_scatter`, `quick_histogram`, `quick_histogram_overlay`, `quick_bar`, `quick_heatmap`, `quick_confusion_matrix`, `quick_roc`, `quick_volcano`

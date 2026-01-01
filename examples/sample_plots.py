@@ -134,4 +134,23 @@ hmbp.metric_comparison(metrics)
 hmbp.set_labels("Model Metrics", "", "")
 hmbp.save("figures/14_metric_comparison.png")
 
-print("Generated 14 sample plots in figures/")
+# 15. Histogram overlay
+fig, ax = hmbp.new_figure()
+data1 = np.random.randn(500) * 0.8
+data2 = np.random.randn(500) * 1.2 + 1.5
+data3 = np.random.randn(500) * 0.6 + 3
+hmbp.histogram_overlay([data1, data2, data3], labels=["MLP", "Attention", "Ground Truth"], bins=30)
+hmbp.set_labels("Score Distributions by Model", "Score", "Count")
+hmbp.save("figures/15_histogram_overlay.png")
+
+# 16. Multi-line plot
+fig, ax = hmbp.new_figure()
+x = np.linspace(0, 10, 100)
+y1 = np.exp(-x * 0.3)
+y2 = np.exp(-x * 0.2) * 0.9
+y3 = np.exp(-x * 0.4) * 1.1
+hmbp.multi_line_plot([y1, y2, y3], x, labels=["Adam", "SGD", "AdamW"])
+hmbp.set_labels("Training Loss Comparison", "Epoch", "Loss")
+hmbp.save("figures/16_multi_line.png")
+
+print("Generated 16 sample plots in figures/")

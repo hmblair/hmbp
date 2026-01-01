@@ -89,6 +89,65 @@ def line_plot(
     return ax
 
 
+def multi_line_plot(
+    ys: Sequence[np.ndarray],
+    x: Optional[np.ndarray] = None,
+    labels: Optional[Sequence[str]] = None,
+    cmap: Colormap = CMAP,
+    fill: bool = False,
+    ax: Optional[plt.Axes] = None,
+) -> plt.Axes:
+    """
+    Create a plot with multiple lines.
+
+    Parameters
+    ----------
+    ys : sequence of array-like
+        List of y-value arrays to plot.
+    x : array-like, optional
+        The x-values (shared). If None, uses np.arange(len(ys[0])).
+    labels : sequence of str, optional
+        Labels for each line.
+    cmap : Colormap, optional
+        Colormap to derive colors from. Default is RdPu.
+    fill : bool, optional
+        Whether to fill under lines. Default is False.
+    ax : Axes, optional
+        Axes to plot on. If None, uses current axes.
+
+    Returns
+    -------
+    ax : Axes
+        The matplotlib axes.
+    """
+    if ax is None:
+        ax = plt.gca()
+
+    n = len(ys)
+    if labels is None:
+        labels = [None] * n
+
+    if x is None:
+        x = np.arange(len(ys[0]))
+    else:
+        x = np.asarray(x)
+
+    # Get colors spread across colormap
+    colors = [cmap(0.3 + 0.5 * i / max(n - 1, 1)) for i in range(n)]
+
+    for y, label, color in zip(ys, labels, colors):
+        y = np.asarray(y)
+        if fill:
+            ax.fill_between(x, y, alpha=0.3, color=color)
+        ax.plot(x, y, color=color, linewidth=1.5, label=label)
+
+    ax.grid(axis="y", alpha=0.5)
+    ax.set_xlim(x.min(), x.max())
+
+    _apply_style(ax)
+    return ax
+
+
 def scatter_plot(
     x: np.ndarray,
     y: np.ndarray,
@@ -174,6 +233,58 @@ def histogram(
     norm = plt.Normalize(counts.min(), counts.max())
     for count, patch in zip(counts, patches):
         patch.set_facecolor(cmap(norm(count)))
+
+    ax.set_axisbelow(True)
+    ax.grid(axis="y", alpha=0.5)
+    _apply_style(ax)
+    return ax
+
+
+def histogram_overlay(
+    datasets: Sequence[np.ndarray],
+    labels: Optional[Sequence[str]] = None,
+    bins: int = 50,
+    alpha: float = 0.5,
+    cmap: Colormap = CMAP,
+    ax: Optional[plt.Axes] = None,
+) -> plt.Axes:
+    """
+    Create overlaid histograms for comparing distributions.
+
+    Parameters
+    ----------
+    datasets : sequence of array-like
+        List of datasets to plot.
+    labels : sequence of str, optional
+        Labels for each dataset.
+    bins : int, optional
+        Number of bins. Default is 50.
+    alpha : float, optional
+        Transparency for overlap visibility. Default is 0.5.
+    cmap : Colormap, optional
+        Colormap for coloring histograms. Default is RdPu.
+    ax : Axes, optional
+        Axes to plot on. If None, uses current axes.
+
+    Returns
+    -------
+    ax : Axes
+        The matplotlib axes.
+    """
+    if ax is None:
+        ax = plt.gca()
+
+    n = len(datasets)
+    if labels is None:
+        labels = [None] * n
+
+    # Get colors spread across colormap
+    colors = [cmap(0.3 + 0.5 * i / max(n - 1, 1)) for i in range(n)]
+
+    for data, label, color in zip(datasets, labels, colors):
+        data = np.asarray(data)
+        ax.hist(data, bins=bins, alpha=alpha, color=color,
+                label=label, edgecolor='black', linewidth=0.3)
 
     ax.set_axisbelow(True)
     ax.grid(axis="y", alpha=0.5)
@@ -942,6 +1053,11 @@ def quick_line(y, x=None, title="", xlabel="", ylabel="", path=None, **kw):
     return _quick(line_plot, (y, x), kw, title, xlabel, ylabel, path)
 
 
+def quick_lines(ys, x=None, labels=None, title="", xlabel="", ylabel="", path=None, **kw):
+    """Create a multi-line plot in one call. Saves to path if provided."""
+    return _quick(multi_line_plot, (ys, x, labels), kw, title, xlabel, ylabel, path)
+
+
 def quick_scatter(x, y, title="", xlabel="", ylabel="", path=None, **kw):
     """Create a scatter plot in one call. Saves to path if provided."""
     return _quick(scatter_plot, (x, y), kw, title, xlabel, ylabel, path)
@@ -950,6 +1066,11 @@ def quick_scatter(x, y, title="", xlabel="", ylabel="", path=None, **kw):
 def quick_histogram(data, title="", xlabel="", ylabel="Count", path=None, **kw):
     """Create a histogram in one call. Saves to path if provided."""
     return _quick(histogram, (data,), kw, title, xlabel, ylabel, path)
+
+
+def quick_histogram_overlay(datasets, labels=None, title="", xlabel="", ylabel="Count", path=None, **kw):
+    """Create overlaid histograms in one call. Saves to path if provided."""
+    return _quick(histogram_overlay, (datasets, labels), kw, title, xlabel, ylabel, path)
 
 
 def quick_bar(values, labels, title="", xlabel="", ylabel="", path=None, **kw):
