@@ -5,7 +5,7 @@ A simple matplotlib wrapper with consistent, publication-ready styling.
 ## Installation
 
 ```bash
-pip install -e .
+pip install hmbp
 ```
 
 ## Style
