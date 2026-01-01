@@ -32,8 +32,18 @@ def _apply_style(ax: plt.Axes) -> None:
 
 
 def _get_colors(cmap: Colormap) -> tuple:
-    """Get fill and line colors from a colormap."""
-    return cmap(0.3), cmap(0.8)
+    """Get fill and line colors from a colormap (same color, fill uses alpha)."""
+    color = cmap(0.7)
+    return color, color
+
+
+def _ema(y: np.ndarray, weight: float) -> np.ndarray:
+    """Exponential moving average smoothing."""
+    smoothed = np.zeros_like(y, dtype=float)
+    smoothed[0] = y[0]
+    for i in range(1, len(y)):
+        smoothed[i] = weight * smoothed[i - 1] + (1 - weight) * y[i]
+    return smoothed
 
 
 def line_plot(
@@ -42,6 +52,7 @@ def line_plot(
     label: str = "",
     cmap: Colormap = CMAP,
     fill: bool = True,
+    smooth: float = 0,
     ax: Optional[plt.Axes] = None,
 ) -> plt.Axes:
     """
@@ -59,6 +70,8 @@ def line_plot(
         Colormap to derive colors from. Default is RdPu.
     fill : bool, optional
         Whether to fill under the line. Default is True.
+    smooth : float, optional
+        EMA smoothing weight (0-1). 0 means no smoothing, 0.9 is heavy smoothing.
     ax : Axes, optional
         Axes to plot on. If None, uses current axes.
 
@@ -75,6 +88,9 @@ def line_plot(
         x = np.arange(len(y))
     else:
         x = np.asarray(x)
+
+    if smooth:
+        y = _ema(y, smooth)
 
     fill_color, line_color = _get_colors(cmap)
 
@@ -95,6 +111,7 @@ def multi_line_plot(
     labels: Optional[Sequence[str]] = None,
     cmap: Colormap = CMAP,
     fill: bool = False,
+    smooth: float = 0,
     ax: Optional[plt.Axes] = None,
 ) -> plt.Axes:
     """
@@ -112,6 +129,8 @@ def multi_line_plot(
         Colormap to derive colors from. Default is RdPu.
     fill : bool, optional
         Whether to fill under lines. Default is False.
+    smooth : float, optional
+        EMA smoothing weight (0-1). 0 means no smoothing, 0.9 is heavy smoothing.
     ax : Axes, optional
         Axes to plot on. If None, uses current axes.
 
@@ -132,11 +151,23 @@ def multi_line_plot(
     else:
         x = np.asarray(x)
 
-    # Get colors spread across colormap
-    colors = [cmap(0.3 + 0.5 * i / max(n - 1, 1)) for i in range(n)]
+    # Use distinct categorical colors for comparison
+    categorical_colors = [
+        '#e41a1c',  # red
+        '#377eb8',  # blue
+        '#4daf4a',  # green
+        '#984ea3',  # purple
+        '#ff7f00',  # orange
+        '#a65628',  # brown
+        '#f781bf',  # pink
+        '#999999',  # gray
+    ]
+    colors = [categorical_colors[i % len(categorical_colors)] for i in range(n)]
 
     for y, label, color in zip(ys, labels, colors):
         y = np.asarray(y)
+        if smooth:
+            y = _ema(y, smooth)
         if fill:
             ax.fill_between(x, y, alpha=0.3, color=color)
         ax.plot(x, y, color=color, linewidth=1.5, label=label)
@@ -278,12 +309,28 @@ def histogram_overlay(
     if labels is None:
         labels = [None] * n
 
-    # Get colors spread across colormap
-    colors = [cmap(0.3 + 0.5 * i / max(n - 1, 1)) for i in range(n)]
+    # Convert all datasets to arrays
+    datasets = [np.asarray(d) for d in datasets]
+
+    # Compute shared bin edges across all data
+    all_data = np.concatenate(datasets)
+    bin_edges = np.histogram_bin_edges(all_data, bins=bins)
+
+    # Use distinct categorical colors (not from sequential colormap)
+    categorical_colors = [
+        '#e41a1c',  # red
+        '#377eb8',  # blue
+        '#4daf4a',  # green
+        '#984ea3',  # purple
+        '#ff7f00',  # orange
+        '#a65628',  # brown
+        '#f781bf',  # pink
+        '#999999',  # gray
+    ]
+    colors = [categorical_colors[i % len(categorical_colors)] for i in range(n)]
 
     for data, label, color in zip(datasets, labels, colors):
-        data = np.asarray(data)
-        ax.hist(data, bins=bins, alpha=alpha, color=color,
+        ax.hist(data, bins=bin_edges, alpha=alpha, color=color,
                 label=label, edgecolor='black', linewidth=0.3)
 
     ax.set_axisbelow(True)
@@ -467,7 +514,18 @@ def box_plot(
     bp = ax.boxplot(data, labels=labels, patch_artist=True)
 
     n = len(data)
-    colors = [cmap(0.3 + 0.5 * i / max(n - 1, 1)) for i in range(n)]
+    # Use distinct categorical colors for comparison
+    categorical_colors = [
+        '#e41a1c',  # red
+        '#377eb8',  # blue
+        '#4daf4a',  # green
+        '#984ea3',  # purple
+        '#ff7f00',  # orange
+        '#a65628',  # brown
+        '#f781bf',  # pink
+        '#999999',  # gray
+    ]
+    colors = [categorical_colors[i % len(categorical_colors)] for i in range(n)]
 
     for patch, color in zip(bp['boxes'], colors):
         patch.set_facecolor(color)
@@ -513,7 +571,18 @@ def violin_plot(
     parts = ax.violinplot(data, showmeans=True, showmedians=True)
 
     n = len(data)
-    colors = [cmap(0.3 + 0.5 * i / max(n - 1, 1)) for i in range(n)]
+    # Use distinct categorical colors for comparison
+    categorical_colors = [
+        '#e41a1c',  # red
+        '#377eb8',  # blue
+        '#4daf4a',  # green
+        '#984ea3',  # purple
+        '#ff7f00',  # orange
+        '#a65628',  # brown
+        '#f781bf',  # pink
+        '#999999',  # gray
+    ]
+    colors = [categorical_colors[i % len(categorical_colors)] for i in range(n)]
 
     for i, pc in enumerate(parts['bodies']):
         pc.set_facecolor(colors[i])
@@ -538,6 +607,7 @@ def line_plot_with_error(
     x: Optional[np.ndarray] = None,
     label: str = "",
     cmap: Colormap = CMAP,
+    smooth: float = 0,
     ax: Optional[plt.Axes] = None,
 ) -> plt.Axes:
     """
@@ -555,6 +625,8 @@ def line_plot_with_error(
         Label for the legend.
     cmap : Colormap, optional
         Colormap to derive colors from. Default is RdPu.
+    smooth : float, optional
+        EMA smoothing weight (0-1). 0 means no smoothing, 0.9 is heavy smoothing.
     ax : Axes, optional
         Axes to plot on. If None, uses current axes.
 
@@ -572,6 +644,10 @@ def line_plot_with_error(
         x = np.arange(len(y))
     else:
         x = np.asarray(x)
+
+    if smooth:
+        y = _ema(y, smooth)
+        yerr = _ema(yerr, smooth)
 
     fill_color, line_color = _get_colors(cmap)
 

@@ -21,8 +21,14 @@ import hmbp
 # Line plots (training curves, time series)
 hmbp.quick_line(y, x, title="Loss Curve", xlabel="Epoch", ylabel="Loss", path="figures/loss.png")
 
+# Line plots with smoothing (for noisy training curves)
+hmbp.quick_line(y, x, smooth=0.9, title="Smoothed Loss", path="figures/loss_smooth.png")
+
 # Multi-line plots (comparing multiple series)
 hmbp.quick_lines([y1, y2, y3], x, labels=["A", "B", "C"], title="Comparison", path="figures/lines.png")
+
+# Multi-line with smoothing
+hmbp.quick_lines([y1, y2], x, labels=["A", "B"], smooth=0.9, title="Smoothed", path="figures/lines_smooth.png")
 
 # Scatter plots (correlations, embeddings)
 hmbp.quick_scatter(x, y, title="Feature Correlation", xlabel="X", ylabel="Y", path="figures/scatter.png")
@@ -55,7 +61,8 @@ hmbp.quick_volcano(log_fc, pvalues, title="Differential Expression", path="figur
 2. **Use descriptive titles** - Titles should explain what the plot shows
 3. **Label axes** - Include units where applicable
 4. **Create plots proactively** - Don't wait to be asked; visualize results as you generate them
-5. **Multiple related plots** - When comparing multiple things, create separate plots or use the standard API with subplots
+5. **Use smoothing for noisy data** - Add `smooth=0.9` for training curves to reduce noise
+6. **Multiple related plots** - When comparing multiple things, create separate plots or use the standard API with subplots
 
 ## Standard API (for complex plots)
 

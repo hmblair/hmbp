@@ -143,14 +143,25 @@ hmbp.histogram_overlay([data1, data2, data3], labels=["MLP", "Attention", "Groun
 hmbp.set_labels("Score Distributions by Model", "Score", "Count")
 hmbp.save("figures/15_histogram_overlay.png")
 
-# 16. Multi-line plot
+# 16. Multi-line plot with noisy data and smoothing
 fig, ax = hmbp.new_figure()
-x = np.linspace(0, 10, 100)
-y1 = np.exp(-x * 0.3)
-y2 = np.exp(-x * 0.2) * 0.9
-y3 = np.exp(-x * 0.4) * 1.1
-hmbp.multi_line_plot([y1, y2, y3], x, labels=["Adam", "SGD", "AdamW"])
-hmbp.set_labels("Training Loss Comparison", "Epoch", "Loss")
+x = np.arange(100)
+y1 = np.exp(-x * 0.03) + np.random.randn(100) * 0.08
+y2 = np.exp(-x * 0.025) * 0.9 + np.random.randn(100) * 0.08
+y3 = np.exp(-x * 0.035) * 1.1 + np.random.randn(100) * 0.08
+hmbp.multi_line_plot([y1, y2, y3], x, labels=["Adam", "SGD", "AdamW"], smooth=0.9)
+hmbp.set_labels("Training Loss Comparison (Smoothed)", "Epoch", "Loss")
 hmbp.save("figures/16_multi_line.png")
 
-print("Generated 16 sample plots in figures/")
+# 17. Raw vs smoothed comparison
+import matplotlib.pyplot as plt
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+x = np.arange(100)
+y = np.exp(-x * 0.03) + np.random.randn(100) * 0.15
+hmbp.line_plot(y, x, label="Raw", ax=ax1, fill=False)
+hmbp.set_labels("Raw Training Curve", "Epoch", "Loss", ax=ax1)
+hmbp.line_plot(y, x, label="Smoothed (0.9)", ax=ax2, fill=False, smooth=0.9)
+hmbp.set_labels("EMA Smoothed (weight=0.9)", "Epoch", "Loss", ax=ax2)
+hmbp.save("figures/17_smoothing_comparison.png")
+
+print("Generated 17 sample plots in figures/")

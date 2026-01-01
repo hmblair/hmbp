@@ -30,8 +30,8 @@ hmbp.save("output.png")
 
 | Function | Description |
 |----------|-------------|
-| `line_plot` | Line with optional fill |
-| `multi_line_plot` | Multiple lines on same axes |
+| `line_plot` | Line with optional fill and smoothing |
+| `multi_line_plot` | Multiple lines on same axes with smoothing |
 | `scatter_plot` | Scatter with optional color mapping |
 | `histogram` | Color-mapped histogram |
 | `histogram_overlay` | Overlaid histograms for comparison |
@@ -47,6 +47,16 @@ hmbp.save("output.png")
 | `learning_curve` | Train/val learning curves |
 | `metric_comparison` | Horizontal bar comparison |
 | `volcano_plot` | Volcano plot for differential analysis |
+
+## Smoothing
+
+Line plots support EMA smoothing for noisy data (e.g., training curves):
+
+```python
+# smooth=0.9 means 90% weight on previous value (heavy smoothing)
+hmbp.quick_line(noisy_loss, smooth=0.9, path="smoothed.png")
+hmbp.quick_lines([y1, y2], labels=["A", "B"], smooth=0.8, path="comparison.png")
+```
 
 ## Helpers
 
