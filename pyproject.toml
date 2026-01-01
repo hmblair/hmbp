@@ -37,8 +37,8 @@ dev = [
 Homepage = "https://github.com/hmblair/hmbp"
 Repository = "https://github.com/hmblair/hmbp"
 
-[tool.setuptools.packages.find]
-where = ["."]
+[tool.setuptools]
+packages = ["hmbp"]
 
 [tool.setuptools_scm]
 version_scheme = "guess-next-dev"
