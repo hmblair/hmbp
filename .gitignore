@@ -43,3 +43,4 @@ Thumbs.db
 # Project specific
 figures/
 .claude/
+hmbp/_version.py
