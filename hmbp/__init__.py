@@ -50,6 +50,9 @@ from hmbp.plotting import (
     quick_volcano,
 )
 
+# PGFPlots module (import as hmbp.pgfplots)
+from hmbp import pgfplots
+
 try:
     from hmbp._version import version as __version__
 except ImportError:
@@ -97,4 +100,6 @@ __all__ = [
     "quick_confusion_matrix",
     "quick_roc",
     "quick_volcano",
+    # PGFPlots module
+    "pgfplots",
 ]

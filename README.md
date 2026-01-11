@@ -77,3 +77,29 @@ hmbp.quick_confusion_matrix(cm, class_names=["A", "B"], path="cm.png")
 ```
 
 Available: `quick_line`, `quick_lines`, `quick_scatter`, `quick_histogram`, `quick_histogram_overlay`, `quick_bar`, `quick_heatmap`, `quick_confusion_matrix`, `quick_roc`, `quick_volcano`
+
+## PGFPlots Output
+
+Generate LaTeX figures using PGFPlots for direct inclusion in papers:
+
+```python
+import hmbp.pgfplots as pgf
+
+# Step-by-step
+pgf.new_figure()
+pgf.line_plot(y, x=x, label="Data", marker="*")
+pgf.set_labels(title="Results", xlabel="Time", ylabel="Value")
+pgf.save("figure.tex")  # Creates .tex and .pdf
+
+# Quick API
+pgf.quick_bar(values, labels, title="Comparison", path="bars.tex")
+pgf.quick_histogram(data, title="Distribution", path="hist.tex")
+```
+
+Features:
+- Outputs both `.tex` and compiled `.pdf` files
+- Helvetica font, clean axis styling, y-major grids
+- Supports `line_plot`, `multi_line_plot`, `bar_plot`, `histogram`
+- Log scale via `new_figure(ymode='log')`
+
+Requires a LaTeX distribution with `lualatex` or `pdflatex`.
