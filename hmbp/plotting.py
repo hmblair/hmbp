@@ -11,10 +11,12 @@ from matplotlib.colors import Colormap, LogNorm, SymLogNorm
 from typing import Optional, Union, Sequence
 from pathlib import Path
 
+from .fonts import ensure_helvetica_available
 
-# Style configuration
 
-plt.rcParams['font.family'] = 'Helvetica'
+# Style configuration - auto-install Helvetica-compatible font if needed
+
+plt.rcParams['font.family'] = ensure_helvetica_available()
 
 LABEL_SIZE = 14
 TITLE_SIZE = 15
