@@ -1,5 +1,6 @@
 """Font installation utilities for hmbp."""
 
+import logging
 import urllib.request
 import zipfile
 from io import BytesIO
@@ -7,6 +8,9 @@ from pathlib import Path
 
 import matplotlib
 import matplotlib.font_manager as fm
+
+# Suppress matplotlib font warnings globally
+logging.getLogger("matplotlib.font_manager").setLevel(logging.ERROR)
 
 
 # TeX Gyre Heros is a free, open-source Helvetica clone
