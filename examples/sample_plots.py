@@ -164,4 +164,12 @@ hmbp.line_plot(y, x, label="Smoothed (0.9)", ax=ax2, fill=False, smooth=0.9)
 hmbp.set_labels("EMA Smoothed (weight=0.9)", "Epoch", "Loss", ax=ax2)
 hmbp.save("figures/17_smoothing_comparison.png")
 
-print("Generated 17 sample plots in figures/")
+# 18. Scatter plot with regression line
+fig, ax = hmbp.new_figure()
+x = np.random.randn(100)
+y = 1.5 * x + 0.5 + np.random.randn(100) * 0.8
+hmbp.scatter_plot(x, y, regression=True)
+hmbp.set_labels("Scatter with Regression", "X", "Y")
+hmbp.save("figures/18_scatter_regression.png")
+
+print("Generated 18 sample plots in figures/")

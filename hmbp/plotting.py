@@ -188,6 +188,7 @@ def scatter_plot(
     label: str = "",
     cmap: Colormap = CMAP,
     size: float = 20,
+    regression: bool = False,
     ax: Optional[plt.Axes] = None,
 ) -> plt.Axes:
     """
@@ -207,6 +208,8 @@ def scatter_plot(
         Colormap for coloring points. Default is RdPu.
     size : float, optional
         Marker size. Default is 20.
+    regression : bool, optional
+        Show linear regression line with R² value. Default is False.
     ax : Axes, optional
         Axes to plot on. If None, uses current axes.
 
@@ -222,10 +225,22 @@ def scatter_plot(
     y = np.asarray(y)
 
     if c is not None:
-        scatter = ax.scatter(x, y, c=c, cmap=cmap, s=size, label=label if label else None)
+        ax.scatter(x, y, c=c, cmap=cmap, s=size, label=label if label else None)
     else:
         _, color = _get_colors(cmap)
-        scatter = ax.scatter(x, y, color=color, s=size, label=label if label else None)
+        ax.scatter(x, y, color=color, s=size, label=label if label else None)
+
+    if regression:
+        mask = ~(np.isnan(x) | np.isnan(y))
+        x_clean, y_clean = x[mask], y[mask]
+        slope, intercept = np.polyfit(x_clean, y_clean, 1)
+        x_line = np.array([x_clean.min(), x_clean.max()])
+        y_line = slope * x_line + intercept
+        r = np.corrcoef(x_clean, y_clean)[0, 1]
+        line, = ax.plot(x_line, y_line, color='0.3', linestyle='--', linewidth=1.5)
+        line.set_label(f'r = {r:.3f}')
+        line.set_dash_capstyle('round')
+        line.set_dashes([4, 2])
 
     ax.grid(axis="both", alpha=0.5)
     _apply_style(ax)
