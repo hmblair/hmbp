@@ -54,8 +54,8 @@ Line plots support EMA smoothing for noisy data (e.g., training curves):
 
 ```python
 # smooth=0.9 means 90% weight on previous value (heavy smoothing)
-hmbp.quick_line(noisy_loss, smooth=0.9, path="smoothed.png")
-hmbp.quick_lines([y1, y2], labels=["A", "B"], smooth=0.8, path="comparison.png")
+hmbp.quick.line(noisy_loss, smooth=0.9, path="smoothed.png")
+hmbp.quick.lines([y1, y2], labels=["A", "B"], smooth=0.8, path="comparison.png")
 ```
 
 ## Helpers
@@ -71,12 +71,12 @@ Single-call functions that create, label, and save in one step:
 ```python
 import hmbp
 
-hmbp.quick_histogram(data, title="Scores", xlabel="Value", path="hist.png")
-hmbp.quick_bar(values, labels, title="Comparison", ylabel="F1", path="bars.png")
-hmbp.quick_confusion_matrix(cm, class_names=["A", "B"], path="cm.png")
+hmbp.quick.histogram(data, title="Scores", xlabel="Value", path="hist.png")
+hmbp.quick.bar(values, labels, title="Comparison", ylabel="F1", path="bars.png")
+hmbp.quick.confusion_matrix(cm, class_names=["A", "B"], path="cm.png")
 ```
 
-Available: `quick_line`, `quick_lines`, `quick_scatter`, `quick_histogram`, `quick_histogram_overlay`, `quick_bar`, `quick_heatmap`, `quick_confusion_matrix`, `quick_roc`, `quick_volcano`
+Available: `hmbp.quick.line`, `hmbp.quick.lines`, `hmbp.quick.scatter`, `hmbp.quick.histogram`, `hmbp.quick.histogram_overlay`, `hmbp.quick.bar`, `hmbp.quick.heatmap`, `hmbp.quick.confusion_matrix`, `hmbp.quick.roc`, `hmbp.quick.volcano`, `hmbp.quick.violin`
 
 ## PGFPlots Output
 

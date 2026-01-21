@@ -225,10 +225,12 @@ def scatter_plot(
     y = np.asarray(y)
 
     if c is not None:
-        ax.scatter(x, y, c=c, cmap=cmap, s=size, label=label if label else None)
+        ax.scatter(x, y, c=c, cmap=cmap, s=size, edgecolor='black', linewidth=0.5,
+                   label=label if label else None)
     else:
         _, color = _get_colors(cmap)
-        ax.scatter(x, y, color=color, s=size, label=label if label else None)
+        ax.scatter(x, y, color=color, s=size, edgecolor='black', linewidth=0.5,
+                   label=label if label else None)
 
     if regression:
         mask = ~(np.isnan(x) | np.isnan(y))
@@ -242,6 +244,7 @@ def scatter_plot(
         line.set_dash_capstyle('round')
         line.set_dashes([4, 2])
 
+    ax.set_axisbelow(True)
     ax.grid(axis="both", alpha=0.5)
     _apply_style(ax)
     return ax
@@ -528,21 +531,12 @@ def box_plot(
     if ax is None:
         ax = plt.gca()
 
+    data = [np.asarray(d) for d in data]
     bp = ax.boxplot(data, labels=labels, patch_artist=True)
 
-    n = len(data)
-    # Use distinct categorical colors for comparison
-    categorical_colors = [
-        '#e41a1c',  # red
-        '#377eb8',  # blue
-        '#4daf4a',  # green
-        '#984ea3',  # purple
-        '#ff7f00',  # orange
-        '#a65628',  # brown
-        '#f781bf',  # pink
-        '#999999',  # gray
-    ]
-    colors = [categorical_colors[i % len(categorical_colors)] for i in range(n)]
+    medians = np.array([np.median(d) for d in data])
+    norm = plt.Normalize(medians.min(), medians.max())
+    colors = [cmap(norm(m)) for m in medians]
 
     for patch, color in zip(bp['boxes'], colors):
         patch.set_facecolor(color)
@@ -552,6 +546,7 @@ def box_plot(
         median.set_color('black')
         median.set_linewidth(1.5)
 
+    ax.set_axisbelow(True)
     ax.grid(axis="y", alpha=0.5)
     _apply_style(ax)
     return ax
@@ -565,6 +560,9 @@ def violin_plot(
 ) -> plt.Axes:
     """
     Create a violin plot for comparing distributions.
+
+    Colors each violin by density (darker = more dense), similar to how
+    histograms color bars by height.
 
     Parameters
     ----------
@@ -585,24 +583,17 @@ def violin_plot(
     if ax is None:
         ax = plt.gca()
 
+    data = [np.asarray(d) for d in data]
     parts = ax.violinplot(data, showmeans=True, showmedians=True)
 
-    n = len(data)
-    # Use distinct categorical colors for comparison
-    categorical_colors = [
-        '#e41a1c',  # red
-        '#377eb8',  # blue
-        '#4daf4a',  # green
-        '#984ea3',  # purple
-        '#ff7f00',  # orange
-        '#a65628',  # brown
-        '#f781bf',  # pink
-        '#999999',  # gray
-    ]
-    colors = [categorical_colors[i % len(categorical_colors)] for i in range(n)]
+    medians = np.array([np.median(d) for d in data])
+    norm = plt.Normalize(medians.min(), medians.max())
+    colors = [cmap(norm(m)) for m in medians]
 
     for i, pc in enumerate(parts['bodies']):
         pc.set_facecolor(colors[i])
+        pc.set_edgecolor('black')
+        pc.set_linewidth(0.5)
         pc.set_alpha(0.7)
 
     for partname in ('cbars', 'cmins', 'cmaxes', 'cmeans', 'cmedians'):
@@ -612,6 +603,7 @@ def violin_plot(
 
     ax.set_xticks(np.arange(1, len(labels) + 1))
     ax.set_xticklabels(labels)
+    ax.set_axisbelow(True)
     ax.grid(axis="y", alpha=0.5)
 
     _apply_style(ax)
@@ -880,11 +872,13 @@ def residual_plot(
     residuals = y_true - y_pred
 
     _, color = _get_colors(cmap)
-    ax.scatter(y_pred, residuals, color=color, s=20, alpha=0.6)
+    ax.scatter(y_pred, residuals, color=color, s=20, alpha=0.6,
+               edgecolor='black', linewidth=0.5)
     ax.axhline(y=0, color='black', linestyle='--', linewidth=1)
 
     ax.set_xlabel("Predicted", fontsize=LABEL_SIZE)
     ax.set_ylabel("Residual", fontsize=LABEL_SIZE)
+    ax.set_axisbelow(True)
     ax.grid(alpha=0.5)
 
     _apply_style(ax)
@@ -1025,16 +1019,19 @@ def volcano_plot(
 
     # Plot non-significant points
     ax.scatter(log_fc[not_sig], neg_log_p[not_sig],
-               c='lightgray', s=15, alpha=0.6, label='Not significant')
+               c='lightgray', s=15, alpha=0.6, edgecolor='black', linewidth=0.3,
+               label='Not significant')
 
     # Plot significant points
     _, up_color = _get_colors(cmap)
     _, down_color = _get_colors(CMAP_ALT)
 
     ax.scatter(log_fc[sig_up], neg_log_p[sig_up],
-               c=[up_color], s=20, alpha=0.8, label=f'Up (FC ≥ {fc_thresh})')
+               c=[up_color], s=20, alpha=0.8, edgecolor='black', linewidth=0.5,
+               label=f'Up (FC ≥ {fc_thresh})')
     ax.scatter(log_fc[sig_down], neg_log_p[sig_down],
-               c=[down_color], s=20, alpha=0.8, label=f'Down (FC ≤ -{fc_thresh})')
+               c=[down_color], s=20, alpha=0.8, edgecolor='black', linewidth=0.5,
+               label=f'Down (FC ≤ -{fc_thresh})')
 
     # Add threshold lines
     ax.axhline(-np.log10(p_thresh), color='black', linestyle='--', linewidth=0.8, alpha=0.5)
@@ -1055,6 +1052,7 @@ def volcano_plot(
 
     ax.set_xlabel("log₂ Fold Change", fontsize=LABEL_SIZE)
     ax.set_ylabel("-log₁₀ P-value", fontsize=LABEL_SIZE)
+    ax.set_axisbelow(True)
     ax.grid(alpha=0.3)
 
     _apply_style(ax)
@@ -1124,73 +1122,3 @@ def save(
 def new_figure(figsize: tuple = (8, 6)) -> tuple[plt.Figure, plt.Axes]:
     """Create a new figure with a single axes."""
     return plt.subplots(figsize=figsize)
-
-
-# =============================================================================
-# Quick plot API - single-call convenience functions for agents
-# =============================================================================
-
-
-def _quick(plot_fn, args, kwargs, title, xlabel, ylabel, path):
-    """Helper for quick_* functions."""
-    fig, ax = new_figure()
-    plot_fn(*args, ax=ax, **kwargs)
-    set_labels(title, xlabel, ylabel, ax)
-    if path:
-        save(path, fig)
-    return ax
-
-
-def quick_line(y, x=None, title="", xlabel="", ylabel="", path=None, **kw):
-    """Create a line plot in one call. Saves to path if provided."""
-    return _quick(line_plot, (y, x), kw, title, xlabel, ylabel, path)
-
-
-def quick_lines(ys, x=None, labels=None, title="", xlabel="", ylabel="", path=None, **kw):
-    """Create a multi-line plot in one call. Saves to path if provided."""
-    return _quick(multi_line_plot, (ys, x, labels), kw, title, xlabel, ylabel, path)
-
-
-def quick_scatter(x, y, title="", xlabel="", ylabel="", path=None, **kw):
-    """Create a scatter plot in one call. Saves to path if provided."""
-    return _quick(scatter_plot, (x, y), kw, title, xlabel, ylabel, path)
-
-
-def quick_histogram(data, title="", xlabel="", ylabel="Count", path=None, **kw):
-    """Create a histogram in one call. Saves to path if provided."""
-    return _quick(histogram, (data,), kw, title, xlabel, ylabel, path)
-
-
-def quick_histogram_overlay(datasets, labels=None, title="", xlabel="", ylabel="Count", path=None, **kw):
-    """Create overlaid histograms in one call. Saves to path if provided."""
-    return _quick(histogram_overlay, (datasets, labels), kw, title, xlabel, ylabel, path)
-
-
-def quick_bar(values, labels, title="", xlabel="", ylabel="", path=None, **kw):
-    """Create a bar plot in one call. Saves to path if provided."""
-    return _quick(bar_plot, (values, labels), kw, title, xlabel, ylabel, path)
-
-
-def quick_heatmap(data, title="", xlabel="", ylabel="", path=None, **kw):
-    """Create a heatmap in one call. Saves to path if provided."""
-    return _quick(heatmap, (data,), kw, title, xlabel, ylabel, path)
-
-
-def quick_confusion_matrix(cm, class_names=None, title="Confusion Matrix", path=None, **kw):
-    """Create a confusion matrix in one call. Saves to path if provided."""
-    return _quick(confusion_matrix, (cm, class_names), kw, title, "", "", path)
-
-
-def quick_roc(fpr, tpr, auc=None, title="ROC Curve", path=None, **kw):
-    """Create an ROC curve in one call. Saves to path if provided."""
-    return _quick(roc_curve, (fpr, tpr, auc), kw, title, "", "", path)
-
-
-def quick_volcano(log_fc, pvalues, title="Volcano Plot", path=None, **kw):
-    """Create a volcano plot in one call. Saves to path if provided."""
-    return _quick(volcano_plot, (log_fc, pvalues), kw, title, "", "", path)
-
-
-def quick_violin(data, labels, title="", xlabel="", ylabel="", path=None, **kw):
-    """Create a violin plot in one call. Saves to path if provided."""
-    return _quick(violin_plot, (data, labels), kw, title, xlabel, ylabel, path)

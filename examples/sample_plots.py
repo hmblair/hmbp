@@ -172,4 +172,64 @@ hmbp.scatter_plot(x, y, regression=True)
 hmbp.set_labels("Scatter with Regression", "X", "Y")
 hmbp.save("figures/18_scatter_regression.png")
 
-print("Generated 18 sample plots in figures/")
+# =============================================================================
+# Quick API examples - single-call convenience functions
+# =============================================================================
+
+# 19. Quick line plot
+hmbp.quick.line(
+    np.sin(np.linspace(0, 10, 100)),
+    np.linspace(0, 10, 100),
+    title="Quick Line Plot",
+    xlabel="X",
+    ylabel="sin(x)",
+    path="figures/19_quick_line.png"
+)
+
+# 20. Quick scatter plot
+x = np.random.randn(100)
+y = 0.8 * x + np.random.randn(100) * 0.3
+hmbp.quick.scatter(x, y, title="Quick Scatter", xlabel="X", ylabel="Y", path="figures/20_quick_scatter.png")
+
+# 21. Quick histogram
+hmbp.quick.histogram(
+    np.random.randn(1000),
+    title="Quick Histogram",
+    xlabel="Value",
+    path="figures/21_quick_histogram.png"
+)
+
+# 22. Quick multi-line with smoothing
+x = np.arange(100)
+y1 = np.exp(-x * 0.03) + np.random.randn(100) * 0.1
+y2 = np.exp(-x * 0.025) * 0.9 + np.random.randn(100) * 0.1
+hmbp.quick.lines(
+    [y1, y2], x,
+    labels=["Model A", "Model B"],
+    smooth=0.9,
+    title="Quick Lines (Smoothed)",
+    xlabel="Epoch",
+    ylabel="Loss",
+    path="figures/22_quick_lines.png"
+)
+
+# 23. Quick bar plot
+hmbp.quick.bar(
+    [0.92, 0.88, 0.95, 0.84],
+    ["RF", "SVM", "XGB", "LR"],
+    title="Quick Bar",
+    ylabel="F1 Score",
+    path="figures/23_quick_bar.png"
+)
+
+# 24. Quick violin plot
+data = [np.random.randn(100) * (i + 1) * 0.3 for i in range(3)]
+hmbp.quick.violin(
+    data,
+    ["Small", "Medium", "Large"],
+    title="Quick Violin",
+    ylabel="Error",
+    path="figures/24_quick_violin.png"
+)
+
+print("Generated 24 sample plots in figures/")
