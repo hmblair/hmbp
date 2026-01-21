@@ -48,6 +48,7 @@ from hmbp.plotting import (
     quick_confusion_matrix,
     quick_roc,
     quick_volcano,
+    quick_violin,
 )
 
 # PGFPlots module (import as hmbp.pgfplots)
@@ -100,6 +101,7 @@ __all__ = [
     "quick_confusion_matrix",
     "quick_roc",
     "quick_volcano",
+    "quick_violin",
     # PGFPlots module
     "pgfplots",
 ]

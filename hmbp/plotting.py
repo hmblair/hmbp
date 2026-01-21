@@ -1189,3 +1189,8 @@ def quick_roc(fpr, tpr, auc=None, title="ROC Curve", path=None, **kw):
 def quick_volcano(log_fc, pvalues, title="Volcano Plot", path=None, **kw):
     """Create a volcano plot in one call. Saves to path if provided."""
     return _quick(volcano_plot, (log_fc, pvalues), kw, title, "", "", path)
+
+
+def quick_violin(data, labels, title="", xlabel="", ylabel="", path=None, **kw):
+    """Create a violin plot in one call. Saves to path if provided."""
+    return _quick(violin_plot, (data, labels), kw, title, xlabel, ylabel, path)
