@@ -413,6 +413,79 @@ def bar_plot(
     return ax
 
 
+def grouped_bar_plot(
+    datasets: Sequence[np.ndarray],
+    labels: Optional[Sequence[str]] = None,
+    group_labels: Optional[Sequence[str]] = None,
+    horizontal: bool = False,
+    cmap: Colormap = CMAP,
+    ax: Optional[plt.Axes] = None,
+) -> plt.Axes:
+    """
+    Create a grouped bar plot for comparing multiple series.
+
+    Parameters
+    ----------
+    datasets : sequence of array-like
+        One array of values per series. All must have the same length.
+    labels : sequence of str, optional
+        Legend label for each series.
+    group_labels : sequence of str, optional
+        Tick label for each group (x-axis position).
+    horizontal : bool, optional
+        If True, create horizontal bars. Default is False.
+    cmap : Colormap, optional
+        Colormap for coloring series. Default is RdPu.
+    ax : Axes, optional
+        Axes to plot on. If None, uses current axes.
+
+    Returns
+    -------
+    ax : Axes
+        The matplotlib axes.
+    """
+    if ax is None:
+        ax = plt.gca()
+
+    n = len(datasets)
+    datasets = [np.asarray(d) for d in datasets]
+    num_groups = len(datasets[0])
+
+    if labels is None:
+        labels = [f"Series {i}" for i in range(n)]
+    if group_labels is None:
+        group_labels = [str(i) for i in range(num_groups)]
+
+    # Sample evenly-spaced colors from the colormap (avoid extremes)
+    positions = np.linspace(0.3, 0.85, n)
+    colors = [cmap(p) for p in positions]
+
+    width = 0.8 / n
+    x = np.arange(num_groups)
+
+    for i, (values, label, color) in enumerate(zip(datasets, labels, colors)):
+        offset = (i - (n - 1) / 2) * width
+        if horizontal:
+            ax.barh(x + offset, values, width, label=label, color=color,
+                    edgecolor='black', linewidth=0.5)
+        else:
+            ax.bar(x + offset, values, width, label=label, color=color,
+                   edgecolor='black', linewidth=0.5)
+
+    if horizontal:
+        ax.set_yticks(x)
+        ax.set_yticklabels(group_labels)
+        ax.grid(axis="x", alpha=0.5)
+    else:
+        ax.set_xticks(x)
+        ax.set_xticklabels(group_labels, rotation=45, ha='right')
+        ax.grid(axis="y", alpha=0.5)
+
+    ax.set_axisbelow(True)
+    _apply_style(ax)
+    return ax
+
+
 def heatmap(
     data: np.ndarray,
     xticklabels: Optional[Sequence[str]] = None,

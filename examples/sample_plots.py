@@ -1,56 +1,87 @@
 """Generate sample plots to demonstrate the hmbp plotting module."""
 
+import shutil
+from itertools import count
+from pathlib import Path
+
+import matplotlib.pyplot as plt
 import numpy as np
+
 import hmbp
 
 np.random.seed(42)
 
-# 1. Line plot
+FIGURES_DIR = Path("figures")
+shutil.rmtree(FIGURES_DIR, ignore_errors=True)
+FIGURES_DIR.mkdir(exist_ok=True)
+
+_counter = count(1)
+
+
+def savefig(name: str, fig=None):
+    """Save with auto-incrementing number prefix."""
+    path = FIGURES_DIR / f"{next(_counter):02d}_{name}.png"
+    hmbp.save(str(path), fig)
+
+
+# --- Core API examples ---
+
+# Line plot
 fig, ax = hmbp.new_figure()
 x = np.linspace(0, 10, 100)
 hmbp.line_plot(np.sin(x), x, label="Model A")
 hmbp.line_plot(np.cos(x), x, label="Model B", cmap=hmbp.CMAP_ALT)
 hmbp.set_labels("Training Loss Over Time", "Epoch", "Loss")
-hmbp.save("figures/01_line_plot.png")
+savefig("line_plot")
 
-# 2. Scatter plot
+# Scatter plot
 fig, ax = hmbp.new_figure()
 x = np.random.randn(200)
 y = 0.5 * x + np.random.randn(200) * 0.3
 hmbp.scatter_plot(x, y, c=y, label="Samples")
 hmbp.set_labels("Feature Correlation", "Feature A", "Feature B")
-hmbp.save("figures/02_scatter_plot.png")
+savefig("scatter_plot")
 
-# 3. Histogram
+# Histogram
 fig, ax = hmbp.new_figure()
 data = np.concatenate([np.random.randn(500), np.random.randn(300) + 3])
 hmbp.histogram(data, bins=40)
 hmbp.set_labels("Score Distribution", "Score", "Count")
-hmbp.save("figures/03_histogram.png")
+savefig("histogram")
 
-# 4. Bar plot
+# Bar plot
 fig, ax = hmbp.new_figure()
 models = ["Random Forest", "XGBoost", "Neural Net", "SVM", "LogReg"]
 scores = [0.92, 0.95, 0.91, 0.88, 0.85]
 hmbp.bar_plot(scores, models)
 hmbp.set_labels("Model Comparison", "", "F1 Score")
-hmbp.save("figures/04_bar_plot.png")
+savefig("bar_plot")
 
-# 5. Box plot
+# Grouped bar plot
+fig, ax = hmbp.new_figure()
+hmbp.grouped_bar_plot(
+    [[0.92, 0.88, 0.95], [0.89, 0.91, 0.93]],
+    labels=["Train", "Validation"],
+    group_labels=["Random Forest", "XGBoost", "Neural Net"],
+)
+hmbp.set_labels("Train vs Validation Performance", "", "F1 Score")
+savefig("grouped_bar_plot")
+
+# Box plot
 fig, ax = hmbp.new_figure()
 data = [np.random.randn(100) + i * 0.5 for i in range(4)]
 hmbp.box_plot(data, ["Model A", "Model B", "Model C", "Model D"])
 hmbp.set_labels("Score Distribution by Model", "", "Score")
-hmbp.save("figures/05_box_plot.png")
+savefig("box_plot")
 
-# 6. Violin plot
+# Violin plot
 fig, ax = hmbp.new_figure()
 data = [np.random.randn(100) * (i + 1) * 0.3 for i in range(4)]
 hmbp.violin_plot(data, ["Small", "Medium", "Large", "XL"])
 hmbp.set_labels("Prediction Variance by Model Size", "", "Prediction Error")
-hmbp.save("figures/06_violin_plot.png")
+savefig("violin_plot")
 
-# 7. Heatmap (correlation matrix)
+# Heatmap (correlation matrix)
 fig, ax = hmbp.new_figure()
 corr = np.random.randn(6, 6)
 corr = (corr + corr.T) / 2
@@ -59,36 +90,36 @@ features = ["feat_1", "feat_2", "feat_3", "feat_4", "feat_5", "feat_6"]
 hmbp.heatmap(corr, xticklabels=features, yticklabels=features,
              colorbar_label="Correlation", center_zero=True, annot=True)
 hmbp.set_labels("Feature Correlation Matrix", "", "")
-hmbp.save("figures/07_heatmap.png")
+savefig("heatmap")
 
-# 8. Line plot with error
+# Line plot with error
 fig, ax = hmbp.new_figure()
 x = np.arange(10)
 y = np.exp(-x * 0.3) + 0.1
 yerr = 0.05 + 0.02 * np.random.randn(10)
 hmbp.line_plot_with_error(y, np.abs(yerr), x, label="Mean +/- Std")
 hmbp.set_labels("Convergence with Uncertainty", "Iteration", "Loss")
-hmbp.save("figures/08_line_with_error.png")
+savefig("line_with_error")
 
-# 9. Confusion matrix
+# Confusion matrix
 fig, ax = hmbp.new_figure()
 cm = np.array([[85, 10, 5], [8, 82, 10], [4, 12, 84]])
 hmbp.confusion_matrix(cm, class_names=["Cat", "Dog", "Bird"], normalize=True)
 hmbp.set_labels("Classification Results", "", "")
-hmbp.save("figures/09_confusion_matrix.png")
+savefig("confusion_matrix")
 
-# 10. ROC curve
+# ROC curve
 fig, ax = hmbp.new_figure()
 fpr1 = np.linspace(0, 1, 100)
-tpr1 = np.sqrt(fpr1)  # Good model
-tpr2 = fpr1 ** 2 + fpr1 * 0.5  # Mediocre model
+tpr1 = np.sqrt(fpr1)
+tpr2 = fpr1 ** 2 + fpr1 * 0.5
 tpr2 = np.clip(tpr2, 0, 1)
 hmbp.roc_curve(fpr1, tpr1, auc=0.92, label="XGBoost")
 hmbp.roc_curve(fpr1, tpr2, auc=0.71, label="Baseline", cmap=hmbp.CMAP_ALT)
 hmbp.set_labels("ROC Comparison", "", "")
-hmbp.save("figures/10_roc_curve.png")
+savefig("roc_curve")
 
-# 11. Precision-Recall curve
+# Precision-Recall curve
 fig, ax = hmbp.new_figure()
 recall = np.linspace(0, 1, 100)
 precision1 = 1 - 0.3 * recall ** 2
@@ -96,17 +127,17 @@ precision2 = 1 - 0.6 * recall
 hmbp.precision_recall_curve(precision1, recall, ap=0.89, label="Model A")
 hmbp.precision_recall_curve(precision2, recall, ap=0.72, label="Model B", cmap=hmbp.CMAP_ALT)
 hmbp.set_labels("Precision-Recall Comparison", "", "")
-hmbp.save("figures/11_pr_curve.png")
+savefig("pr_curve")
 
-# 12. Residual plot
+# Residual plot
 fig, ax = hmbp.new_figure()
 y_pred = np.linspace(0, 10, 100)
 y_true = y_pred + np.random.randn(100) * 0.5
 hmbp.residual_plot(y_true, y_pred)
 hmbp.set_labels("Residual Analysis", "", "")
-hmbp.save("figures/12_residual_plot.png")
+savefig("residual_plot")
 
-# 13. Learning curve
+# Learning curve
 fig, ax = hmbp.new_figure()
 sizes = np.array([100, 200, 500, 1000, 2000, 5000])
 train_scores = np.column_stack([
@@ -119,9 +150,9 @@ val_scores = np.column_stack([
 ])
 hmbp.learning_curve(train_scores, val_scores, sizes, metric_name="Accuracy")
 hmbp.set_labels("Learning Curve", "", "")
-hmbp.save("figures/13_learning_curve.png")
+savefig("learning_curve")
 
-# 14. Metric comparison
+# Metric comparison
 fig, ax = hmbp.new_figure()
 metrics = {
     "Accuracy": 0.94,
@@ -132,18 +163,18 @@ metrics = {
 }
 hmbp.metric_comparison(metrics)
 hmbp.set_labels("Model Metrics", "", "")
-hmbp.save("figures/14_metric_comparison.png")
+savefig("metric_comparison")
 
-# 15. Histogram overlay
+# Histogram overlay
 fig, ax = hmbp.new_figure()
 data1 = np.random.randn(500) * 0.8
 data2 = np.random.randn(500) * 1.2 + 1.5
 data3 = np.random.randn(500) * 0.6 + 3
 hmbp.histogram_overlay([data1, data2, data3], labels=["MLP", "Attention", "Ground Truth"], bins=30)
 hmbp.set_labels("Score Distributions by Model", "Score", "Count")
-hmbp.save("figures/15_histogram_overlay.png")
+savefig("histogram_overlay")
 
-# 16. Multi-line plot with noisy data and smoothing
+# Multi-line plot with smoothing
 fig, ax = hmbp.new_figure()
 x = np.arange(100)
 y1 = np.exp(-x * 0.03) + np.random.randn(100) * 0.08
@@ -151,10 +182,9 @@ y2 = np.exp(-x * 0.025) * 0.9 + np.random.randn(100) * 0.08
 y3 = np.exp(-x * 0.035) * 1.1 + np.random.randn(100) * 0.08
 hmbp.multi_line_plot([y1, y2, y3], x, labels=["Adam", "SGD", "AdamW"], smooth=0.9)
 hmbp.set_labels("Training Loss Comparison (Smoothed)", "Epoch", "Loss")
-hmbp.save("figures/16_multi_line.png")
+savefig("multi_line")
 
-# 17. Raw vs smoothed comparison
-import matplotlib.pyplot as plt
+# Raw vs smoothed comparison
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
 x = np.arange(100)
 y = np.exp(-x * 0.03) + np.random.randn(100) * 0.15
@@ -162,44 +192,45 @@ hmbp.line_plot(y, x, label="Raw", ax=ax1, fill=False)
 hmbp.set_labels("Raw Training Curve", "Epoch", "Loss", ax=ax1)
 hmbp.line_plot(y, x, label="Smoothed (0.9)", ax=ax2, fill=False, smooth=0.9)
 hmbp.set_labels("EMA Smoothed (weight=0.9)", "Epoch", "Loss", ax=ax2)
-hmbp.save("figures/17_smoothing_comparison.png")
+savefig("smoothing_comparison")
 
-# 18. Scatter plot with regression line
+# Scatter plot with regression line
 fig, ax = hmbp.new_figure()
 x = np.random.randn(100)
 y = 1.5 * x + 0.5 + np.random.randn(100) * 0.8
 hmbp.scatter_plot(x, y, regression=True)
 hmbp.set_labels("Scatter with Regression", "X", "Y")
-hmbp.save("figures/18_scatter_regression.png")
+savefig("scatter_regression")
 
 # =============================================================================
 # Quick API examples - single-call convenience functions
 # =============================================================================
 
-# 19. Quick line plot
+# Quick line plot
 hmbp.quick.line(
     np.sin(np.linspace(0, 10, 100)),
     np.linspace(0, 10, 100),
     title="Quick Line Plot",
     xlabel="X",
     ylabel="sin(x)",
-    path="figures/19_quick_line.png"
+    path=str(FIGURES_DIR / f"{next(_counter):02d}_quick_line.png"),
 )
 
-# 20. Quick scatter plot
+# Quick scatter plot
 x = np.random.randn(100)
 y = 0.8 * x + np.random.randn(100) * 0.3
-hmbp.quick.scatter(x, y, title="Quick Scatter", xlabel="X", ylabel="Y", path="figures/20_quick_scatter.png")
+hmbp.quick.scatter(x, y, title="Quick Scatter", xlabel="X", ylabel="Y",
+                   path=str(FIGURES_DIR / f"{next(_counter):02d}_quick_scatter.png"))
 
-# 21. Quick histogram
+# Quick histogram
 hmbp.quick.histogram(
     np.random.randn(1000),
     title="Quick Histogram",
     xlabel="Value",
-    path="figures/21_quick_histogram.png"
+    path=str(FIGURES_DIR / f"{next(_counter):02d}_quick_histogram.png"),
 )
 
-# 22. Quick multi-line with smoothing
+# Quick multi-line with smoothing
 x = np.arange(100)
 y1 = np.exp(-x * 0.03) + np.random.randn(100) * 0.1
 y2 = np.exp(-x * 0.025) * 0.9 + np.random.randn(100) * 0.1
@@ -210,26 +241,37 @@ hmbp.quick.lines(
     title="Quick Lines (Smoothed)",
     xlabel="Epoch",
     ylabel="Loss",
-    path="figures/22_quick_lines.png"
+    path=str(FIGURES_DIR / f"{next(_counter):02d}_quick_lines.png"),
 )
 
-# 23. Quick bar plot
+# Quick bar plot
 hmbp.quick.bar(
     [0.92, 0.88, 0.95, 0.84],
     ["RF", "SVM", "XGB", "LR"],
     title="Quick Bar",
     ylabel="F1 Score",
-    path="figures/23_quick_bar.png"
+    path=str(FIGURES_DIR / f"{next(_counter):02d}_quick_bar.png"),
 )
 
-# 24. Quick violin plot
+# Quick grouped bar plot
+hmbp.quick.bars(
+    [[0.92, 0.88, 0.95, 0.84], [0.90, 0.85, 0.93, 0.82]],
+    labels=["Train", "Test"],
+    group_labels=["RF", "SVM", "XGB", "LR"],
+    title="Quick Grouped Bars",
+    ylabel="F1 Score",
+    path=str(FIGURES_DIR / f"{next(_counter):02d}_quick_bars.png"),
+)
+
+# Quick violin plot
 data = [np.random.randn(100) * (i + 1) * 0.3 for i in range(3)]
 hmbp.quick.violin(
     data,
     ["Small", "Medium", "Large"],
     title="Quick Violin",
     ylabel="Error",
-    path="figures/24_quick_violin.png"
+    path=str(FIGURES_DIR / f"{next(_counter):02d}_quick_violin.png"),
 )
 
-print("Generated 24 sample plots in figures/")
+n = next(_counter) - 1
+print(f"Generated {n} sample plots in {FIGURES_DIR}/")

@@ -13,6 +13,7 @@ __all__ = [
     "histogram",
     "histogram_overlay",
     "bar",
+    "bars",
     "heatmap",
     "confusion_matrix",
     "roc",
@@ -30,6 +31,7 @@ from hmbp.plotting import (
     histogram as histogram_plot,
     histogram_overlay as histogram_overlay_plot,
     bar_plot,
+    grouped_bar_plot,
     heatmap as heatmap_plot,
     confusion_matrix as confusion_matrix_plot,
     roc_curve,
@@ -76,6 +78,11 @@ def histogram_overlay(datasets, labels=None, title="", xlabel="", ylabel="Count"
 def bar(values, labels, title="", xlabel="", ylabel="", path=None, **kw):
     """Create a bar plot in one call. Saves to path if provided."""
     return _quick(bar_plot, (values, labels), kw, title, xlabel, ylabel, path)
+
+
+def bars(datasets, labels=None, group_labels=None, title="", xlabel="", ylabel="", path=None, **kw):
+    """Create a grouped bar plot in one call. Saves to path if provided."""
+    return _quick(grouped_bar_plot, (datasets, labels, group_labels), kw, title, xlabel, ylabel, path)
 
 
 def heatmap(data, title="", xlabel="", ylabel="", path=None, **kw):
