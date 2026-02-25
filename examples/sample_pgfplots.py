@@ -102,6 +102,54 @@ def log_scale_example():
     print(f"Log scale plot: {pdf or 'tex only'}")
 
 
+def grouped_bar_example():
+    """Generate a grouped bar chart with hatching."""
+    pgf.new_figure()
+    pgf.grouped_bar_plot(
+        [[0.92, 0.88, 0.95], [0.89, 0.91, 0.93]],
+        labels=["Train", "Validation"],
+        group_labels=["RF", "XGB", "NN"],
+        colors=["blue", "red"],
+        hatch=[False, True],
+    )
+    pgf.set_labels(
+        title="Train vs Validation",
+        ylabel="F1 Score",
+    )
+    pdf = pgf.save(OUTPUT_DIR / "grouped_bar.tex")
+    print(f"Grouped bar: {pdf or 'tex only'}")
+
+
+def multi_axis_example():
+    """Generate a side-by-side multi-axis figure."""
+    pgf.new_figure(ymode="log")
+    pgf.grouped_bar_plot(
+        [[0.5, 0.6], [0.05, 0.08]],
+        labels=["1 thread", "8 threads"],
+        group_labels=["Tool A", "Tool B"],
+        colors=["red", "purple"],
+        hatch=[False, True],
+        bar_width="12pt",
+        group_spacing="1.7cm",
+    )
+    pgf.set_labels(title="Short Sequences", ylabel="Time (s)")
+
+    pgf.new_axis(xshift="8cm", ymode="log")
+    pgf.grouped_bar_plot(
+        [[25.0, 30.0], [0.12, 0.02]],
+        labels=["1 thread", "8 threads"],
+        group_labels=["Tool A", "Tool B"],
+        colors=["red", "purple"],
+        hatch=[False, True],
+        bar_width="12pt",
+        group_spacing="1.7cm",
+    )
+    pgf.set_labels(title="Long Sequences", ylabel="Time (s)")
+
+    pdf = pgf.save(OUTPUT_DIR / "multi_axis.tex")
+    print(f"Multi-axis: {pdf or 'tex only'}")
+
+
 def quick_api_example():
     """Demonstrate quick API functions."""
     # Quick line plot
@@ -126,6 +174,17 @@ def quick_api_example():
     )
     print(f"Quick bar: {pdf or 'tex only'}")
 
+    # Quick grouped bar chart
+    pdf = pgf.quick_grouped_bar(
+        [[10, 25, 15], [12, 20, 18]],
+        labels=["2024", "2025"],
+        group_labels=["Q1", "Q2", "Q3"],
+        title="Year over Year",
+        ylabel="Revenue",
+        path=OUTPUT_DIR / "quick_grouped_bar.tex",
+    )
+    print(f"Quick grouped bar: {pdf or 'tex only'}")
+
     # Quick histogram
     np.random.seed(123)
     data = np.random.exponential(scale=2, size=300)
@@ -145,8 +204,10 @@ if __name__ == "__main__":
     line_plot_example()
     multi_line_example()
     bar_chart_example()
+    grouped_bar_example()
     histogram_example()
     log_scale_example()
+    multi_axis_example()
     quick_api_example()
 
     print(f"\nOutput directory: {OUTPUT_DIR}")

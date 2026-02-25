@@ -5,6 +5,7 @@ Generates publication-ready LaTeX figures using PGFPlots,
 with an API mirroring the matplotlib module.
 """
 
+import re
 import subprocess
 import shutil
 from pathlib import Path
@@ -19,6 +20,7 @@ import numpy as np
 PREAMBLE = r"""\documentclass[border=0.2cm]{standalone}
 
 \usepackage{pgfplots}
+\usetikzlibrary{patterns.meta}
 \usepackage[scaled]{helvet}
 \renewcommand\familydefault{\sfdefault}
 \usepackage[T1]{fontenc}
@@ -41,6 +43,7 @@ COLORS = {
     'blue': '799FCB',
     'gold': 'F1A226',
     'purple': 'A44694',
+    'orange': 'FF9F43',
 }
 
 # Categorical colors (matching matplotlib module)
@@ -82,24 +85,53 @@ def _get_color(color: Optional[Union[str, int]], index: int = 0) -> str:
 # Figure State
 # =============================================================================
 
-class _FigureState:
-    """Holds the current figure state."""
-    def __init__(self):
-        self.reset()
-
-    def reset(self):
-        self.plots = []
-        self.title = ""
-        self.xlabel = ""
-        self.ylabel = ""
-        self.options = {}
-        self.legend_entries = []
-        self._plot_index = 0
+class _AxisState:
+    """Holds state for a single axis environment."""
+    def __init__(self, **options):
+        self.plots: list = []
+        self.title: str = ""
+        self.xlabel: str = ""
+        self.ylabel: str = ""
+        self.options: dict = {}
+        self.legend_entries: list = []
+        self._plot_index: int = 0
+        self.options.update(options)
 
     def next_color_index(self) -> int:
         idx = self._plot_index
         self._plot_index += 1
         return idx
+
+
+class _FigureState:
+    """Holds the current figure state (one tikzpicture, multiple axes)."""
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self._axes: list = []
+        self._current: Optional[_AxisState] = None
+
+    @property
+    def current(self) -> _AxisState:
+        """Return the current axis, creating one if needed."""
+        if self._current is None:
+            self._current = _AxisState()
+        return self._current
+
+    def new_axis(self, **options) -> _AxisState:
+        """Finalize any current axis and start a new one."""
+        if self._current is not None:
+            self._axes.append(self._current)
+        self._current = _AxisState(**options)
+        return self._current
+
+    def all_axes(self) -> list:
+        """Return all axes including the current one."""
+        result = list(self._axes)
+        if self._current is not None:
+            result.append(self._current)
+        return result
 
 
 _state = _FigureState()
@@ -117,23 +149,28 @@ def _format_coordinates(x: np.ndarray, y: np.ndarray) -> str:
     return '\n'.join(lines)
 
 
-def _build_axis_options() -> str:
-    """Build the axis options string."""
+def _parse_dimension(dim: str) -> tuple:
+    """Parse a TeX dimension like '8pt' into (value, unit)."""
+    m = re.match(r'([0-9.]+)\s*([a-z]*)', dim)
+    if m:
+        return float(m.group(1)), m.group(2) or 'pt'
+    return float(dim), 'pt'
+
+
+def _build_axis_options(axis: _AxisState) -> str:
+    """Build the axis options string for a given axis."""
     opts = []
 
-    # Labels
-    if _state.title:
-        opts.append(rf"title={{\large {_state.title}}}")
-    if _state.xlabel:
-        opts.append(rf"xlabel={{\large {_state.xlabel}}}")
-    if _state.ylabel:
-        opts.append(rf"ylabel={{\large {_state.ylabel}}}")
+    if axis.title:
+        opts.append(rf"title={{\large {axis.title}}}")
+    if axis.xlabel:
+        opts.append(rf"xlabel={{\large {axis.xlabel}}}")
+    if axis.ylabel:
+        opts.append(rf"ylabel={{\large {axis.ylabel}}}")
 
-    # Standard styling (matching reference)
     opts.append("ymajorgrids")
 
-    # Only add these if 'axis lines' is not set (they conflict)
-    if 'axis lines' not in _state.options:
+    if 'axis lines' not in axis.options:
         opts.extend([
             "xtick pos=left",
             "ytick pos=left",
@@ -141,15 +178,13 @@ def _build_axis_options() -> str:
             "y axis line style=-",
         ])
 
-    # Custom options
-    for key, val in _state.options.items():
+    for key, val in axis.options.items():
         if val is True:
             opts.append(key)
         elif val is not False and val is not None:
             opts.append(f"{key}={val}")
 
-    # Legend if needed
-    if _state.legend_entries:
+    if axis.legend_entries:
         opts.append("legend pos=north west")
 
     return ',\n\t'.join(opts)
@@ -157,29 +192,29 @@ def _build_axis_options() -> str:
 
 def _build_document() -> str:
     """Build the complete LaTeX document."""
+    axes = _state.all_axes()
+
     parts = [
         PREAMBLE.strip(),
         "",
         _color_definitions(),
         "",
         r"\begin{tikzpicture}",
-        "",
-        r"\begin{axis}[",
-        f"\t{_build_axis_options()}",
-        "]",
-        "",
     ]
 
-    # Add all plots
-    parts.extend(_state.plots)
-
-    # Add legend entries
-    for entry in _state.legend_entries:
-        parts.append(rf"\addlegendentry{{{entry}}}")
+    for axis in axes:
+        parts.append("")
+        parts.append(r"\begin{axis}[")
+        parts.append(f"\t{_build_axis_options(axis)}")
+        parts.append("]")
+        parts.append("")
+        parts.extend(axis.plots)
+        for entry in axis.legend_entries:
+            parts.append(rf"\addlegendentry{{{entry}}}")
+        parts.append("")
+        parts.append(r"\end{axis}")
 
     parts.extend([
-        "",
-        r"\end{axis}",
         "",
         r"\end{tikzpicture}",
         POSTAMBLE.strip(),
@@ -236,10 +271,26 @@ def new_figure(**options) -> None:
     Parameters
     ----------
     **options : dict
-        Additional axis options (e.g., ymode='log', xmin=0).
+        Axis options for the first axis (e.g., ymode='log', xmin=0).
     """
     _state.reset()
-    _state.options.update(options)
+    if options:
+        _state.current.options.update(options)
+
+
+def new_axis(**options) -> None:
+    """
+    Start a new axis within the current figure.
+
+    Closes the current axis (if any) and opens a new one.
+    All subsequent plot commands target this axis.
+
+    Parameters
+    ----------
+    **options : dict
+        PGFPlots axis options (e.g., xshift='193pt', ymode='log').
+    """
+    _state.new_axis(**options)
 
 
 def line_plot(
@@ -274,7 +325,7 @@ def line_plot(
     else:
         x = np.asarray(x)
 
-    color_name = _get_color(color, _state.next_color_index())
+    color_name = _get_color(color, _state.current.next_color_index())
 
     opts = [f"color={color_name}"]
     if marker and marker != 'none':
@@ -286,10 +337,10 @@ def line_plot(
     coords = _format_coordinates(x, y)
 
     plot_cmd = rf"\addplot [{opts_str}] coordinates {{{chr(10)}{coords}{chr(10)}}};"
-    _state.plots.append(plot_cmd)
+    _state.current.plots.append(plot_cmd)
 
     if label:
-        _state.legend_entries.append(label)
+        _state.current.legend_entries.append(label)
 
 
 def multi_line_plot(
@@ -333,6 +384,7 @@ def bar_plot(
     labels: Sequence[str],
     color: Optional[Union[str, int]] = None,
     bar_width: str = "15pt",
+    hatch: bool = False,
 ) -> None:
     """
     Add a bar plot to the current figure.
@@ -347,32 +399,120 @@ def bar_plot(
         Bar fill color.
     bar_width : str, optional
         Width of bars. Default is "15pt".
+    hatch : bool, optional
+        Whether to apply diagonal line hatching. Default is False.
     """
     values = np.asarray(values)
     n = len(values)
     color_name = _get_color(color, 0)
+    axis = _state.current
 
-    # Use numeric x coordinates with controlled spacing (like reference)
-    # Bars at positions 0, 1, 2, ... with spacing proportional to bar width
-    _state.options['ybar'] = True
-    _state.options['bar width'] = bar_width
-    _state.options['x'] = '0.7cm'  # Tighter spacing so bars aren't too far apart
-    _state.options['enlarge x limits'] = '{abs=0.5}'
+    axis.options['ybar'] = True
+    axis.options['bar width'] = bar_width
+    axis.options['x'] = '0.7cm'
+    axis.options['enlarge x limits'] = '{abs=0.5}'
 
-    # Set up x-axis ticks at bar positions with labels
     tick_positions = ', '.join(str(i) for i in range(n))
     tick_labels = ', '.join(labels)
-    _state.options['xtick'] = f'{{{tick_positions}}}'
-    _state.options['xticklabels'] = f'{{{tick_labels}}}'
+    axis.options['xtick'] = f'{{{tick_positions}}}'
+    axis.options['xticklabels'] = f'{{{tick_labels}}}'
 
-    # Build coordinates with numeric x positions
     coords = []
     for i, val in enumerate(values):
         coords.append(f"\t({i}, {val})")
     coords_str = '\n'.join(coords)
 
-    plot_cmd = rf"\addplot [fill={color_name}] coordinates {{{chr(10)}{coords_str}{chr(10)}}};"
-    _state.plots.append(plot_cmd)
+    opts = [f"fill={color_name}"]
+    if hatch:
+        opts.append(r"postaction={pattern={Lines[angle=45, distance=2pt]}}")
+    opts_str = ', '.join(opts)
+
+    plot_cmd = rf"\addplot [{opts_str}] coordinates {{{chr(10)}{coords_str}{chr(10)}}};"
+    axis.plots.append(plot_cmd)
+
+
+def grouped_bar_plot(
+    datasets: Sequence[Sequence],
+    labels: Optional[Sequence[str]] = None,
+    group_labels: Optional[Sequence[str]] = None,
+    colors: Optional[Sequence[Union[str, int]]] = None,
+    hatch: Optional[Sequence[bool]] = None,
+    bar_width: str = "8pt",
+    group_spacing: str = "1cm",
+) -> None:
+    """
+    Add a grouped bar plot for comparing multiple series.
+
+    Parameters
+    ----------
+    datasets : sequence of array-like
+        One array of values per series. All must have the same length.
+    labels : sequence of str, optional
+        Legend label for each series.
+    group_labels : sequence of str, optional
+        Tick label for each group (x-axis position).
+    colors : sequence of str/int, optional
+        Color for each series.
+    hatch : sequence of bool, optional
+        Whether to apply diagonal line hatching per series.
+    bar_width : str, optional
+        Width of each bar (TeX dimension). Default is "8pt".
+    group_spacing : str, optional
+        Spacing between group centers. Default is "1cm".
+    """
+    axis = _state.current
+    datasets = [np.asarray(d) for d in datasets]
+    n_series = len(datasets)
+    n_groups = len(datasets[0])
+
+    if labels is None:
+        labels = [None] * n_series
+    if colors is None:
+        colors = [None] * n_series
+    if hatch is None:
+        hatch = [False] * n_series
+    if group_labels is None:
+        group_labels = [str(i) for i in range(n_groups)]
+
+    axis.options['ybar'] = True
+    axis.options['bar width'] = bar_width
+    axis.options['x'] = group_spacing
+    axis.options['enlarge x limits'] = '{abs=0.5}'
+
+    tick_positions = ', '.join(str(i) for i in range(n_groups))
+    tick_labels = ', '.join(group_labels)
+    axis.options['xtick'] = f'{{{tick_positions}}}'
+    axis.options['xticklabels'] = f'{{{tick_labels}}}'
+
+    # Compute bar shifts to center the group
+    bar_val, bar_unit = _parse_dimension(bar_width)
+    total = n_series * bar_val
+    shifts = [
+        (i * bar_val) - (total - bar_val) / 2
+        for i in range(n_series)
+    ]
+
+    for i, (values, label, color, hatched) in enumerate(
+        zip(datasets, labels, colors, hatch)
+    ):
+        color_name = _get_color(color, axis.next_color_index())
+        opts = [f"fill={color_name}", f"bar shift={shifts[i]}{bar_unit}"]
+        if hatched:
+            opts.append(
+                r"postaction={pattern={Lines[angle=45, distance=2pt]}}"
+            )
+
+        opts_str = ', '.join(opts)
+        coords = []
+        for j, val in enumerate(values):
+            coords.append(f"\t({j}, {val})")
+        coords_str = '\n'.join(coords)
+
+        plot_cmd = rf"\addplot [{opts_str}] coordinates {{{chr(10)}{coords_str}{chr(10)}}};"
+        axis.plots.append(plot_cmd)
+
+        if label:
+            axis.legend_entries.append(label)
 
 
 def histogram(
@@ -399,23 +539,72 @@ def histogram(
     counts, bin_edges = np.histogram(data, bins=bins, density=density)
 
     color_name = _get_color(color, 0)
+    axis = _state.current
 
-    # Set histogram-specific axis options (matching reference style)
-    _state.options['axis lines'] = 'left'
-    _state.options['enlarge x limits'] = '0.05'
-    # Add headroom above tallest bar to prevent clipping
-    _state.options['ymax'] = float(counts.max()) * 1.1
+    axis.options['axis lines'] = 'left'
+    axis.options['enlarge x limits'] = '0.05'
+    axis.options['ymax'] = float(counts.max()) * 1.1
 
-    # Build coordinates for ybar interval
     coords = []
     for i, count in enumerate(counts):
         coords.append(f"({bin_edges[i]},{count})")
-    # Add final edge with 0 height to close the interval
     coords.append(f"({bin_edges[-1]},{0})")
     coords_str = '\n'.join(coords)
 
     plot_cmd = rf"\addplot+[ybar interval, mark=no, fill={color_name}!50, draw=black, thin] plot coordinates{{{chr(10)}{coords_str}{chr(10)}}};"
-    _state.plots.append(plot_cmd)
+    axis.plots.append(plot_cmd)
+
+
+def node(
+    x: float,
+    y: float,
+    text: str,
+    anchor: str = "south",
+    **options,
+) -> None:
+    """
+    Add a text node at axis coordinates.
+
+    Parameters
+    ----------
+    x : float
+        X coordinate (in axis units).
+    y : float
+        Y coordinate (in axis units).
+    text : str
+        The text content (can include LaTeX).
+    anchor : str, optional
+        Node anchor point. Default is "south".
+    **options : dict
+        Additional TikZ node options. Underscores in keys are
+        converted to spaces (e.g., align_center -> align center,
+        minimum_size -> minimum size).
+    """
+    axis = _state.current
+    opts = [f"anchor={anchor}"]
+    for key, val in options.items():
+        key = key.replace('_', ' ')
+        if val is True:
+            opts.append(key)
+        elif val is not False and val is not None:
+            opts.append(f"{key}={val}")
+    opts_str = ', '.join(opts)
+    cmd = rf"\node [{opts_str}] at (axis cs:{x},{y}) {{{text}}};"
+    axis.plots.append(cmd)
+
+
+def raw(latex: str) -> None:
+    """
+    Append raw LaTeX to the current axis.
+
+    Use this for features not covered by the API.
+
+    Parameters
+    ----------
+    latex : str
+        Raw LaTeX code to insert into the current axis environment.
+    """
+    _state.current.plots.append(latex)
 
 
 def set_labels(
@@ -436,11 +625,11 @@ def set_labels(
         Y-axis label.
     """
     if title:
-        _state.title = title
+        _state.current.title = title
     if xlabel:
-        _state.xlabel = xlabel
+        _state.current.xlabel = xlabel
     if ylabel:
-        _state.ylabel = ylabel
+        _state.current.ylabel = ylabel
 
 
 def set_options(**options) -> None:
@@ -452,7 +641,7 @@ def set_options(**options) -> None:
     **options : dict
         PGFPlots axis options (e.g., ymode='log', ymin=0).
     """
-    _state.options.update(options)
+    _state.current.options.update(options)
 
 
 def save(
@@ -545,6 +734,24 @@ def quick_bar(
 ):
     """Create a bar plot in one call. Saves to path if provided."""
     return _quick(bar_plot, (values, labels), kw, title, xlabel, ylabel, path, {})
+
+
+def quick_grouped_bar(
+    datasets,
+    labels=None,
+    group_labels=None,
+    title="",
+    xlabel="",
+    ylabel="",
+    path=None,
+    **kw
+):
+    """Create a grouped bar plot in one call. Saves to path if provided."""
+    return _quick(
+        grouped_bar_plot, (datasets,),
+        {'labels': labels, 'group_labels': group_labels, **kw},
+        title, xlabel, ylabel, path, {},
+    )
 
 
 def quick_histogram(
