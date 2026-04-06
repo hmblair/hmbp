@@ -559,7 +559,7 @@ def heatmap(
 
     if xticklabels is not None:
         ax.set_xticks(np.arange(len(xticklabels)))
-        ax.set_xticklabels(xticklabels)
+        ax.set_xticklabels(xticklabels, rotation=45, ha="right")
     if yticklabels is not None:
         ax.set_yticks(np.arange(len(yticklabels)))
         ax.set_yticklabels(yticklabels)
